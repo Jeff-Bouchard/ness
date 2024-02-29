@@ -2,7 +2,7 @@ repo_name: Jeff-Bouchard/ness
 report_id: a4a7fda4bebaa230c4995d330cfd9fd5
 version: 0.1
 repo_type: Public
-timestamp: '2024-02-04T14:47:19+00:00'
+timestamp: '2024-02-29T19:54:27+00:00'
 requested_by: Jeff-Bouchard
 provider: github
 branch: develop
@@ -102,7 +102,7 @@ tools:
   last_updated_by: gz-c
   last_updated_on: 2018-09-13 08:52:09.000000000 Z
 - name: Swift
-  description: 'An innovative new programming language for Cocoa and Cocoa Touch. '
+  description: An innovative new programming language for Cocoa and Cocoa Touch.
   website_url: https://developer.apple.com/swift/
   license: Apache-2.0
   open_source: true
