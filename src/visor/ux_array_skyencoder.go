@@ -39,6 +39,24 @@ func encodeSizeUxArray(obj *UxArray) uint64 {
 		// x.Body.Hours
 		i1 += 8
 
+		// x.Body.Delegate.Version
+		i1++
+
+		// x.Body.Delegate.Key
+		i1 += 20
+
+		// x.Body.MaxHours
+		i1 += 8
+
+		// x.Body.Expiry
+		i1 += 8
+
+		// x.Body.MinInterval
+		i1 += 8
+
+		// x.Body.DelegateLast
+		i1 += 8
+
 		i0 += uint64(len(obj.UxArray)) * i1
 	}
 
@@ -100,6 +118,24 @@ func encodeUxArrayToBuffer(buf []byte, obj *UxArray) error {
 
 		// x.Body.Hours
 		e.Uint64(x.Body.Hours)
+
+		// x.Body.Delegate.Version
+		e.Uint8(x.Body.Delegate.Version)
+
+		// x.Body.Delegate.Key
+		e.CopyBytes(x.Body.Delegate.Key[:])
+
+		// x.Body.MaxHours
+		e.Uint64(x.Body.MaxHours)
+
+		// x.Body.Expiry
+		e.Uint64(x.Body.Expiry)
+
+		// x.Body.MinInterval
+		e.Uint64(x.Body.MinInterval)
+
+		// x.Body.DelegateLast
+		e.Uint64(x.Body.DelegateLast)
 
 	}
 
@@ -194,6 +230,59 @@ func decodeUxArray(buf []byte, obj *UxArray) (uint64, error) {
 					obj.UxArray[z1].Body.Hours = i
 				}
 
+				{
+					// obj.UxArray[z1].Body.Delegate.Version
+					i, err := d.Uint8()
+					if err != nil {
+						return 0, err
+					}
+					obj.UxArray[z1].Body.Delegate.Version = i
+				}
+
+				{
+					// obj.UxArray[z1].Body.Delegate.Key
+					if len(d.Buffer) < len(obj.UxArray[z1].Body.Delegate.Key) {
+						return 0, encoder.ErrBufferUnderflow
+					}
+					copy(obj.UxArray[z1].Body.Delegate.Key[:], d.Buffer[:len(obj.UxArray[z1].Body.Delegate.Key)])
+					d.Buffer = d.Buffer[len(obj.UxArray[z1].Body.Delegate.Key):]
+				}
+
+				{
+					// obj.UxArray[z1].Body.MaxHours
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.UxArray[z1].Body.MaxHours = i
+				}
+
+				{
+					// obj.UxArray[z1].Body.Expiry
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.UxArray[z1].Body.Expiry = i
+				}
+
+				{
+					// obj.UxArray[z1].Body.MinInterval
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.UxArray[z1].Body.MinInterval = i
+				}
+
+				{
+					// obj.UxArray[z1].Body.DelegateLast
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.UxArray[z1].Body.DelegateLast = i
+				}
 			}
 		}
 	}

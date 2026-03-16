@@ -62,6 +62,24 @@ func encodeSizeTransaction(obj *Transaction) uint64 {
 		// x1.Hours
 		i1 += 8
 
+		// x1.Delegate.Version
+		i1++
+
+		// x1.Delegate.Key
+		i1 += 20
+
+		// x1.MaxHours
+		i1 += 8
+
+		// x1.Expiry
+		i1 += 8
+
+		// x1.MinInterval
+		i1 += 8
+
+		// x1.DelegateLast
+		i1 += 8
+
 		i0 += uint64(len(obj.Out)) * i1
 	}
 
@@ -170,6 +188,24 @@ func encodeTransactionToBuffer(buf []byte, obj *Transaction) error {
 
 		// x.Hours
 		e.Uint64(x.Hours)
+
+		// x.Delegate.Version
+		e.Uint8(x.Delegate.Version)
+
+		// x.Delegate.Key
+		e.CopyBytes(x.Delegate.Key[:])
+
+		// x.MaxHours
+		e.Uint64(x.MaxHours)
+
+		// x.Expiry
+		e.Uint64(x.Expiry)
+
+		// x.MinInterval
+		e.Uint64(x.MinInterval)
+
+		// x.DelegateLast
+		e.Uint64(x.DelegateLast)
 
 	}
 
@@ -334,6 +370,60 @@ func decodeTransaction(buf []byte, obj *Transaction) (uint64, error) {
 						return 0, err
 					}
 					obj.Out[z1].Hours = i
+				}
+
+				{
+					// obj.Out[z1].Delegate.Version
+					i, err := d.Uint8()
+					if err != nil {
+						return 0, err
+					}
+					obj.Out[z1].Delegate.Version = i
+				}
+
+				{
+					// obj.Out[z1].Delegate.Key
+					if len(d.Buffer) < len(obj.Out[z1].Delegate.Key) {
+						return 0, encoder.ErrBufferUnderflow
+					}
+					copy(obj.Out[z1].Delegate.Key[:], d.Buffer[:len(obj.Out[z1].Delegate.Key)])
+					d.Buffer = d.Buffer[len(obj.Out[z1].Delegate.Key):]
+				}
+
+				{
+					// obj.Out[z1].MaxHours
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Out[z1].MaxHours = i
+				}
+
+				{
+					// obj.Out[z1].Expiry
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Out[z1].Expiry = i
+				}
+
+				{
+					// obj.Out[z1].MinInterval
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Out[z1].MinInterval = i
+				}
+
+				{
+					// obj.Out[z1].DelegateLast
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Out[z1].DelegateLast = i
 				}
 
 			}

@@ -565,7 +565,6 @@ func (txn *Transaction) UpdateHeader() error {
 		return err
 	}
 	txn.Length = s
-	txn.Type = byte(0x00)
 	txn.InnerHash = txn.HashInner()
 	return nil
 }

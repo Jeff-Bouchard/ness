@@ -28,6 +28,24 @@ func encodeSizeUxOut(obj *UxOut) uint64 {
 	// obj.Out.Body.Hours
 	i0 += 8
 
+	// obj.Out.Body.Delegate.Version
+	i0++
+
+	// obj.Out.Body.Delegate.Key
+	i0 += 20
+
+	// obj.Out.Body.MaxHours
+	i0 += 8
+
+	// obj.Out.Body.Expiry
+	i0 += 8
+
+	// obj.Out.Body.MinInterval
+	i0 += 8
+
+	// obj.Out.Body.DelegateLast
+	i0 += 8
+
 	// obj.SpentTxnID
 	i0 += 32
 
@@ -81,6 +99,24 @@ func encodeUxOutToBuffer(buf []byte, obj *UxOut) error {
 
 	// obj.Out.Body.Hours
 	e.Uint64(obj.Out.Body.Hours)
+
+	// obj.Out.Body.Delegate.Version
+	e.Uint8(obj.Out.Body.Delegate.Version)
+
+	// obj.Out.Body.Delegate.Key
+	e.CopyBytes(obj.Out.Body.Delegate.Key[:])
+
+	// obj.Out.Body.MaxHours
+	e.Uint64(obj.Out.Body.MaxHours)
+
+	// obj.Out.Body.Expiry
+	e.Uint64(obj.Out.Body.Expiry)
+
+	// obj.Out.Body.MinInterval
+	e.Uint64(obj.Out.Body.MinInterval)
+
+	// obj.Out.Body.DelegateLast
+	e.Uint64(obj.Out.Body.DelegateLast)
 
 	// obj.SpentTxnID
 	e.CopyBytes(obj.SpentTxnID[:])
@@ -160,6 +196,60 @@ func decodeUxOut(buf []byte, obj *UxOut) (uint64, error) {
 			return 0, err
 		}
 		obj.Out.Body.Hours = i
+	}
+
+	{
+		// obj.Out.Body.Delegate.Version
+		i, err := d.Uint8()
+		if err != nil {
+			return 0, err
+		}
+		obj.Out.Body.Delegate.Version = i
+	}
+
+	{
+		// obj.Out.Body.Delegate.Key
+		if len(d.Buffer) < len(obj.Out.Body.Delegate.Key) {
+			return 0, encoder.ErrBufferUnderflow
+		}
+		copy(obj.Out.Body.Delegate.Key[:], d.Buffer[:len(obj.Out.Body.Delegate.Key)])
+		d.Buffer = d.Buffer[len(obj.Out.Body.Delegate.Key):]
+	}
+
+	{
+		// obj.Out.Body.MaxHours
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.Out.Body.MaxHours = i
+	}
+
+	{
+		// obj.Out.Body.Expiry
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.Out.Body.Expiry = i
+	}
+
+	{
+		// obj.Out.Body.MinInterval
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.Out.Body.MinInterval = i
+	}
+
+	{
+		// obj.Out.Body.DelegateLast
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.Out.Body.DelegateLast = i
 	}
 
 	{

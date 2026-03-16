@@ -89,6 +89,24 @@ func encodeSizeBlock(obj *coin.Block) uint64 {
 			// x2.Hours
 			i2 += 8
 
+			// x2.Delegate.Version
+			i2++
+
+			// x2.Delegate.Key
+			i2 += 20
+
+			// x2.MaxHours
+			i2 += 8
+
+			// x2.Expiry
+			i2 += 8
+
+			// x2.MinInterval
+			i2 += 8
+
+			// x2.DelegateLast
+			i2 += 8
+
 			i1 += uint64(len(x1.Out)) * i2
 		}
 
@@ -237,6 +255,24 @@ func encodeBlockToBuffer(buf []byte, obj *coin.Block) error {
 
 			// x.Hours
 			e.Uint64(x.Hours)
+
+			// x.Delegate.Version
+			e.Uint8(x.Delegate.Version)
+
+			// x.Delegate.Key
+			e.CopyBytes(x.Delegate.Key[:])
+
+			// x.MaxHours
+			e.Uint64(x.MaxHours)
+
+			// x.Expiry
+			e.Uint64(x.Expiry)
+
+			// x.MinInterval
+			e.Uint64(x.MinInterval)
+
+			// x.DelegateLast
+			e.Uint64(x.DelegateLast)
 
 		}
 
@@ -487,6 +523,60 @@ func decodeBlock(buf []byte, obj *coin.Block) (uint64, error) {
 									return 0, err
 								}
 								obj.Body.Transactions[z2].Out[z4].Hours = i
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].Delegate.Version
+								i, err := d.Uint8()
+								if err != nil {
+									return 0, err
+								}
+								obj.Body.Transactions[z2].Out[z4].Delegate.Version = i
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].Delegate.Key
+								if len(d.Buffer) < len(obj.Body.Transactions[z2].Out[z4].Delegate.Key) {
+									return 0, encoder.ErrBufferUnderflow
+								}
+								copy(obj.Body.Transactions[z2].Out[z4].Delegate.Key[:], d.Buffer[:len(obj.Body.Transactions[z2].Out[z4].Delegate.Key)])
+								d.Buffer = d.Buffer[len(obj.Body.Transactions[z2].Out[z4].Delegate.Key):]
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].MaxHours
+								i, err := d.Uint64()
+								if err != nil {
+									return 0, err
+								}
+								obj.Body.Transactions[z2].Out[z4].MaxHours = i
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].Expiry
+								i, err := d.Uint64()
+								if err != nil {
+									return 0, err
+								}
+								obj.Body.Transactions[z2].Out[z4].Expiry = i
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].MinInterval
+								i, err := d.Uint64()
+								if err != nil {
+									return 0, err
+								}
+								obj.Body.Transactions[z2].Out[z4].MinInterval = i
+							}
+
+							{
+								// obj.Body.Transactions[z2].Out[z4].DelegateLast
+								i, err := d.Uint64()
+								if err != nil {
+									return 0, err
+								}
+								obj.Body.Transactions[z2].Out[z4].DelegateLast = i
 							}
 
 						}

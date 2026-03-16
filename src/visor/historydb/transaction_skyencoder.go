@@ -62,6 +62,24 @@ func encodeSizeTransaction(obj *Transaction) uint64 {
 		// x.Hours
 		i1 += 8
 
+		// x.Delegate.Version
+		i1++
+
+		// x.Delegate.Key
+		i1 += 20
+
+		// x.MaxHours
+		i1 += 8
+
+		// x.Expiry
+		i1 += 8
+
+		// x.MinInterval
+		i1 += 8
+
+		// x.DelegateLast
+		i1 += 8
+
 		i0 += uint64(len(obj.Txn.Out)) * i1
 	}
 
@@ -173,6 +191,24 @@ func encodeTransactionToBuffer(buf []byte, obj *Transaction) error {
 
 		// x.Hours
 		e.Uint64(x.Hours)
+
+		// x.Delegate.Version
+		e.Uint8(x.Delegate.Version)
+
+		// x.Delegate.Key
+		e.CopyBytes(x.Delegate.Key[:])
+
+		// x.MaxHours
+		e.Uint64(x.MaxHours)
+
+		// x.Expiry
+		e.Uint64(x.Expiry)
+
+		// x.MinInterval
+		e.Uint64(x.MinInterval)
+
+		// x.DelegateLast
+		e.Uint64(x.DelegateLast)
 
 	}
 
@@ -340,6 +376,60 @@ func decodeTransaction(buf []byte, obj *Transaction) (uint64, error) {
 						return 0, err
 					}
 					obj.Txn.Out[z2].Hours = i
+				}
+
+				{
+					// obj.Txn.Out[z2].Delegate.Version
+					i, err := d.Uint8()
+					if err != nil {
+						return 0, err
+					}
+					obj.Txn.Out[z2].Delegate.Version = i
+				}
+
+				{
+					// obj.Txn.Out[z2].Delegate.Key
+					if len(d.Buffer) < len(obj.Txn.Out[z2].Delegate.Key) {
+						return 0, encoder.ErrBufferUnderflow
+					}
+					copy(obj.Txn.Out[z2].Delegate.Key[:], d.Buffer[:len(obj.Txn.Out[z2].Delegate.Key)])
+					d.Buffer = d.Buffer[len(obj.Txn.Out[z2].Delegate.Key):]
+				}
+
+				{
+					// obj.Txn.Out[z2].MaxHours
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Txn.Out[z2].MaxHours = i
+				}
+
+				{
+					// obj.Txn.Out[z2].Expiry
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Txn.Out[z2].Expiry = i
+				}
+
+				{
+					// obj.Txn.Out[z2].MinInterval
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Txn.Out[z2].MinInterval = i
+				}
+
+				{
+					// obj.Txn.Out[z2].DelegateLast
+					i, err := d.Uint64()
+					if err != nil {
+						return 0, err
+					}
+					obj.Txn.Out[z2].DelegateLast = i
 				}
 
 			}

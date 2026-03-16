@@ -94,6 +94,24 @@ func encodeSizeGiveBlocksMessage(obj *GiveBlocksMessage) uint64 {
 				// x3.Hours
 				i3 += 8
 
+				// x3.Delegate.Version
+				i3++
+
+				// x3.Delegate.Key
+				i3 += 20
+
+				// x3.MaxHours
+				i3 += 8
+
+				// x3.Expiry
+				i3 += 8
+
+				// x3.MinInterval
+				i3 += 8
+
+				// x3.DelegateLast
+				i3 += 8
+
 				i2 += uint64(len(x2.Out)) * i3
 			}
 
@@ -264,6 +282,24 @@ func encodeGiveBlocksMessageToBuffer(buf []byte, obj *GiveBlocksMessage) error {
 
 				// x.Hours
 				e.Uint64(x.Hours)
+
+				// x.Delegate.Version
+				e.Uint8(x.Delegate.Version)
+
+				// x.Delegate.Key
+				e.CopyBytes(x.Delegate.Key[:])
+
+				// x.MaxHours
+				e.Uint64(x.MaxHours)
+
+				// x.Expiry
+				e.Uint64(x.Expiry)
+
+				// x.MinInterval
+				e.Uint64(x.MinInterval)
+
+				// x.DelegateLast
+				e.Uint64(x.DelegateLast)
 
 			}
 
@@ -540,6 +576,60 @@ func decodeGiveBlocksMessage(buf []byte, obj *GiveBlocksMessage) (uint64, error)
 												return 0, err
 											}
 											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Hours = i
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Version
+											i, err := d.Uint8()
+											if err != nil {
+												return 0, err
+											}
+											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Version = i
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Key
+											if len(d.Buffer) < len(obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Key) {
+												return 0, encoder.ErrBufferUnderflow
+											}
+											copy(obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Key[:], d.Buffer[:len(obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Key)])
+											d.Buffer = d.Buffer[len(obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Delegate.Key):]
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].MaxHours
+											i, err := d.Uint64()
+											if err != nil {
+												return 0, err
+											}
+											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].MaxHours = i
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Expiry
+											i, err := d.Uint64()
+											if err != nil {
+												return 0, err
+											}
+											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].Expiry = i
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].MinInterval
+											i, err := d.Uint64()
+											if err != nil {
+												return 0, err
+											}
+											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].MinInterval = i
+										}
+
+										{
+											// obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].DelegateLast
+											i, err := d.Uint64()
+											if err != nil {
+												return 0, err
+											}
+											obj.Blocks[z1].Block.Body.Transactions[z5].Out[z7].DelegateLast = i
 										}
 
 									}
