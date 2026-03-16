@@ -23,6 +23,24 @@ func encodeSizeUxBody(obj *UxBody) uint64 {
 	// obj.Hours
 	i0 += 8
 
+	// obj.Delegate.Version
+	i0++
+
+	// obj.Delegate.Key
+	i0 += 20
+
+	// obj.MaxHours
+	i0 += 8
+
+	// obj.Expiry
+	i0 += 8
+
+	// obj.MinInterval
+	i0 += 8
+
+	// obj.DelegateLast
+	i0 += 8
+
 	return i0
 }
 
@@ -64,6 +82,24 @@ func encodeUxBodyToBuffer(buf []byte, obj *UxBody) error {
 
 	// obj.Hours
 	e.Uint64(obj.Hours)
+
+	// obj.Delegate.Version
+	e.Uint8(obj.Delegate.Version)
+
+	// obj.Delegate.Key
+	e.CopyBytes(obj.Delegate.Key[:])
+
+	// obj.MaxHours
+	e.Uint64(obj.MaxHours)
+
+	// obj.Expiry
+	e.Uint64(obj.Expiry)
+
+	// obj.MinInterval
+	e.Uint64(obj.MinInterval)
+
+	// obj.DelegateLast
+	e.Uint64(obj.DelegateLast)
 
 	return nil
 }
@@ -119,6 +155,60 @@ func decodeUxBody(buf []byte, obj *UxBody) (uint64, error) {
 			return 0, err
 		}
 		obj.Hours = i
+	}
+
+	{
+		// obj.Delegate.Version
+		i, err := d.Uint8()
+		if err != nil {
+			return 0, err
+		}
+		obj.Delegate.Version = i
+	}
+
+	{
+		// obj.Delegate.Key
+		if len(d.Buffer) < len(obj.Delegate.Key) {
+			return 0, encoder.ErrBufferUnderflow
+		}
+		copy(obj.Delegate.Key[:], d.Buffer[:len(obj.Delegate.Key)])
+		d.Buffer = d.Buffer[len(obj.Delegate.Key):]
+	}
+
+	{
+		// obj.MaxHours
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.MaxHours = i
+	}
+
+	{
+		// obj.Expiry
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.Expiry = i
+	}
+
+	{
+		// obj.MinInterval
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.MinInterval = i
+	}
+
+	{
+		// obj.DelegateLast
+		i, err := d.Uint64()
+		if err != nil {
+			return 0, err
+		}
+		obj.DelegateLast = i
 	}
 
 	return uint64(len(buf) - len(d.Buffer)), nil

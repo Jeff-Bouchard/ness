@@ -32,6 +32,12 @@ type transactionOutputs struct {
 	Out []TransactionOutput `enc:",maxlen=65535"`
 }
 
+const (
+	TxTypeBasic            uint8  = 0
+	TxTypeDelegatedHours   uint8  = 1
+	DelegatedPayoutCoinMax uint64 = 1 // one droplet
+)
+
 /*
 Transaction with N inputs, M ouputs is
 - 32 bytes constant
@@ -67,6 +73,12 @@ type TransactionOutput struct {
 	Address cipher.Address // address to send to
 	Coins   uint64         // amount to be sent in coins
 	Hours   uint64         // amount to be sent in coin hours
+	// Delegation metadata; zero values mean no delegation
+	Delegate     cipher.Address // delegated hours spender
+	MaxHours     uint64         // per-txn delegated hours cap
+	Expiry       uint64         // unix expiry for delegation (0 = disabled)
+	MinInterval  uint64         // seconds between delegated spends (0 = no rate limit)
+	DelegateLast uint64         // last delegated spend time to enforce interval (0 = never)
 }
 
 // Verify attempts to determine if the transaction is well formed.
@@ -117,7 +129,7 @@ func (txn *Transaction) verify(signed bool) error {
 		return errors.New("Duplicate spend")
 	}
 
-	if txn.Type != 0 {
+	if txn.Type != TxTypeBasic && txn.Type != TxTypeDelegatedHours {
 		return errors.New("transaction type invalid")
 	}
 
@@ -202,6 +214,106 @@ func (txn *Transaction) verify(signed bool) error {
 	return nil
 }
 
+// VerifyDelegated checks delegated-hours constraints when applicable.
+func (txn Transaction) VerifyDelegated(headTime uint64, uxIn UxArray) error {
+	return txn.verifyDelegatedConstraints(headTime, uxIn)
+}
+
+// verifyDelegatedConstraints enforces delegated-hours spending rules.
+// Assumes signatures are already verified (owner or delegate).
+func (txn Transaction) verifyDelegatedConstraints(headTime uint64, uxIn UxArray) error {
+	if txn.Type != TxTypeDelegatedHours {
+		return nil
+	}
+
+	if len(txn.In) != 1 || len(uxIn) != 1 {
+		return errors.New("Delegated hours transaction must have exactly one input")
+	}
+
+	ux := uxIn[0]
+	if ux.Body.Delegate.Null() {
+		return errors.New("Delegated hours input missing delegate")
+	}
+	if ux.Body.MaxHours == 0 {
+		return errors.New("Delegated hours input missing MaxHours")
+	}
+
+	ownerAddr := ux.Body.Address
+	inputCoins := ux.Body.Coins
+
+	inputHours, err := ux.CoinHours(headTime)
+	if err != nil {
+		return err
+	}
+
+	outHours, err := txn.OutputHours()
+	if err != nil {
+		return err
+	}
+	if outHours > inputHours {
+		return errors.New("Delegated hours spend overdraws hours")
+	}
+
+	// Coins routing: owner must keep all coins except an optional 1-droplet payout budget.
+	var ownerCoins uint64
+	var nonOwnerCoins uint64
+	for _, o := range txn.Out {
+		if o.Address == ownerAddr {
+			ownerCoins, err = mathutil.AddUint64(ownerCoins, o.Coins)
+			if err != nil {
+				return errors.New("Owner coin sum overflow")
+			}
+		} else {
+			nonOwnerCoins, err = mathutil.AddUint64(nonOwnerCoins, o.Coins)
+			if err != nil {
+				return errors.New("Non-owner coin sum overflow")
+			}
+		}
+	}
+
+	if nonOwnerCoins > DelegatedPayoutCoinMax {
+		return errors.New("Delegated payout coin amount exceeds limit")
+	}
+	if ownerCoins+nonOwnerCoins != inputCoins {
+		return errors.New("Delegated spend must conserve input coins")
+	}
+	if ownerCoins+nonOwnerCoins < inputCoins {
+		return errors.New("Delegated spend loses coins")
+	}
+
+	// Hours consumed by delegate = fee + hours sent to non-owner outputs.
+	var nonOwnerHours uint64
+	for _, o := range txn.Out {
+		if o.Address != ownerAddr {
+			nonOwnerHours, err = mathutil.AddUint64(nonOwnerHours, o.Hours)
+			if err != nil {
+				return errors.New("Non-owner hours sum overflow")
+			}
+		}
+	}
+	fee := inputHours - outHours
+	hoursConsumed, err := mathutil.AddUint64(fee, nonOwnerHours)
+	if err != nil {
+		return errors.New("Delegated hours consumed overflow")
+	}
+	if hoursConsumed > ux.Body.MaxHours {
+		return errors.New("Delegated hours exceed MaxHours")
+	}
+
+	// Interval and expiry checks
+	if ux.Body.MinInterval > 0 {
+		minAllowed := ux.Body.DelegateLast + ux.Body.MinInterval
+		if headTime < minAllowed {
+			return errors.New("Delegated spend violates MinInterval")
+		}
+	}
+	if ux.Body.Expiry > 0 && headTime >= ux.Body.Expiry {
+		return errors.New("Delegated spend past expiry")
+	}
+
+	return nil
+}
+
 func (txn Transaction) verifyInputSignaturesPrelude(uxIn UxArray) error {
 	if len(txn.In) != len(uxIn) {
 		return errors.New("txn.In != uxIn")
@@ -236,10 +348,18 @@ func (txn Transaction) VerifyInputSignatures(uxIn UxArray) error {
 		}
 
 		hash := cipher.AddSHA256(txn.InnerHash, txn.In[i]) // use inner hash, not outer hash
-		err := cipher.VerifyAddressSignedHash(uxIn[i].Body.Address, txn.Sigs[i], hash)
-		if err != nil {
-			return errors.New("Signature not valid for output being spent")
+		ownerErr := cipher.VerifyAddressSignedHash(uxIn[i].Body.Address, txn.Sigs[i], hash)
+		if ownerErr == nil {
+			continue
 		}
+
+		if txn.Type == TxTypeDelegatedHours && !uxIn[i].Body.Delegate.Null() {
+			if err := cipher.VerifyAddressSignedHash(uxIn[i].Body.Delegate, txn.Sigs[i], hash); err == nil {
+				continue
+			}
+		}
+
+		return errors.New("Signature not valid for output being spent")
 	}
 
 	return nil
@@ -284,6 +404,11 @@ func (txOut TransactionOutput) UxID(txID cipher.SHA256) cipher.SHA256 {
 	x.Coins = txOut.Coins
 	x.Hours = txOut.Hours
 	x.Address = txOut.Address
+	x.Delegate = txOut.Delegate
+	x.MaxHours = txOut.MaxHours
+	x.Expiry = txOut.Expiry
+	x.MinInterval = txOut.MinInterval
+	x.DelegateLast = txOut.DelegateLast
 	x.SrcTransaction = txID
 	return x.Hash()
 }

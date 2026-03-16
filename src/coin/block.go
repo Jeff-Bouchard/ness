@@ -203,6 +203,11 @@ func CreateUnspents(bh BlockHeader, txn Transaction) UxArray {
 				Address:        txn.Out[i].Address,
 				Coins:          txn.Out[i].Coins,
 				Hours:          txn.Out[i].Hours,
+				Delegate:       txn.Out[i].Delegate,
+				MaxHours:       txn.Out[i].MaxHours,
+				Expiry:         txn.Out[i].Expiry,
+				MinInterval:    txn.Out[i].MinInterval,
+				DelegateLast:   bh.Time,
 			},
 		}
 	}

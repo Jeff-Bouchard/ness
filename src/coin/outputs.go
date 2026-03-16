@@ -58,6 +58,11 @@ type UxBody struct {
 	Address        cipher.Address // Address of receiver
 	Coins          uint64         // Number of coins
 	Hours          uint64         // Coin hours
+	Delegate       cipher.Address // Delegated spender of coin hours (null if none)
+	MaxHours       uint64         // Max hours consumable per delegated txn
+	Expiry         uint64         // Unix time after which delegation is invalid (0 = disabled)
+	MinInterval    uint64         // Minimum seconds between delegated spends (0 = none)
+	DelegateLast   uint64         // Last delegated spend time (unix), 0 if never
 }
 
 // Hash returns the hash of UxBody
